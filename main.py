@@ -23,7 +23,6 @@ def veritabani_ayarla():
     c.execute('''CREATE TABLE IF NOT EXISTS kullanicilar (nick TEXT PRIMARY KEY, puan INTEGER)''')
     c.execute('''CREATE TABLE IF NOT EXISTS tahminler (nick TEXT, mac_id TEXT, ev_skor INTEGER, dep_skor INTEGER, kazanilan_puan INTEGER DEFAULT -1)''')
     c.execute('''CREATE TABLE IF NOT EXISTS fikstur (mac_id TEXT PRIMARY KEY, ev_sahibi TEXT, deplasman TEXT, tarih TEXT)''')
-    # YENİ: Gerçek Süper Lig Tablosu
     c.execute('''CREATE TABLE IF NOT EXISTS gercek_lig (sira INTEGER PRIMARY KEY, takim TEXT, o INTEGER, g INTEGER, b INTEGER, m INTEGER, av INTEGER, p INTEGER)''')
     conn.commit()
     conn.close()
@@ -44,7 +43,6 @@ def puan_hesapla(tahmin_ev, tahmin_deplasman, gercek_ev, gercek_deplasman):
 async def ana_sayfa():
     return FileResponse("index.html")
 
-# TÜM FİKSTÜRÜ GETİR (Sayfalama için frontend'e hepsini yolluyoruz)
 @app.get("/api/fikstur")
 async def fikstur_getir():
     conn = sqlite3.connect("superlig.db")
@@ -83,7 +81,7 @@ async def tahmin_kaydet(nick: str, mac_id: str, ev_skor: int, dep_skor: int):
     conn.close()
     return {"mesaj": "Başarılı"}
 
-# CRON JOB 1: SALI GÜNLERİ ÇALIŞACAK YENİ HAFTA BOTU
+# CRON JOB 1: SALI GÜNLERİ ÇALIŞACAK YENİ HAFTA BOTU (HATA AYIKLAMA MODU EKLENDİ)
 @app.get("/api/otomatik-fikstur-cek")
 async def otomatik_fikstur_cek(admin_sifre: str):
     if admin_sifre != "samsun55": return {"hata": "Yetkisiz İşlem!"}
@@ -100,18 +98,23 @@ async def otomatik_fikstur_cek(admin_sifre: str):
         c = conn.cursor()
         
         eklenen = 0
-        for mac in veri.get("response", []):
-            m_id = str(mac["fixture"]["id"])
-            tarih = mac["fixture"]["date"]
-            ev = mac["teams"]["home"]["name"]
-            dep = mac["teams"]["away"]["name"]
-            # Eskileri silmiyoruz, sadece yeni verileri üstüne ekliyoruz
-            c.execute("INSERT OR IGNORE INTO fikstur (mac_id, ev_sahibi, deplasman, tarih) VALUES (?, ?, ?, ?)", (m_id, ev, dep, tarih))
-            eklenen += 1
+        if "response" in veri:
+            for mac in veri["response"]:
+                m_id = str(mac["fixture"]["id"])
+                tarih = mac["fixture"]["date"]
+                ev = mac["teams"]["home"]["name"]
+                dep = mac["teams"]["away"]["name"]
+                c.execute("INSERT OR IGNORE INTO fikstur (mac_id, ev_sahibi, deplasman, tarih) VALUES (?, ?, ?, ?)", (m_id, ev, dep, tarih))
+                eklenen += 1
             
         conn.commit()
         conn.close()
-        return {"mesaj": f"{eklenen} yeni maç sisteme eklendi."}
+        
+        # BÜTÜN CEVABI EKRANA BAS
+        return {
+            "mesaj": f"{eklenen} yeni maç sisteme eklendi.",
+            "api_ham_cevap": veri
+        }
     except Exception as e:
         return {"hata": f"Bağlantı sorunu: {str(e)}"}
 
@@ -121,16 +124,13 @@ async def otomatik_skor_guncelle(admin_sifre: str):
     if admin_sifre != "samsun55": return {"hata": "Yetkisiz İşlem!"}
     api_key = os.environ.get("FOOTBALL_API_KEY")
     
-    # 1. Biten Maçları Bul ve Tahminleri Puanla
     url_fikstur = "https://v3.football.api-sports.io/fixtures?league=203&season=2026&last=20"
-    # 2. Gerçek Süper Lig Puan Durumunu Çek
     url_lig = "https://v3.football.api-sports.io/standings?league=203&season=2026"
     
     try:
         conn = sqlite3.connect("superlig.db")
         c = conn.cursor()
 
-        # Maç Skorları İşlemi
         req_f = urllib.request.Request(url_fikstur)
         req_f.add_header("x-apisports-key", api_key)
         with urllib.request.urlopen(req_f) as response:
@@ -156,14 +156,13 @@ async def otomatik_skor_guncelle(admin_sifre: str):
                 c.execute("UPDATE tahminler SET kazanilan_puan = ? WHERE nick = ? AND mac_id = ?", (puan, nick, t_mac_id))
                 hesaplanan += 1
 
-        # Gerçek Lig Tablosu İşlemi
         req_l = urllib.request.Request(url_lig)
         req_l.add_header("x-apisports-key", api_key)
         with urllib.request.urlopen(req_l) as response:
             veri_l = json.loads(response.read())
         
         if veri_l.get("response"):
-            c.execute("DELETE FROM gercek_lig") # Eski tabloyu sil
+            c.execute("DELETE FROM gercek_lig") 
             takimlar = veri_l["response"][0]["league"]["standings"][0]
             for t in takimlar:
                 c.execute("INSERT INTO gercek_lig (sira, takim, o, g, b, m, av, p) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
