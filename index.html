@@ -33,7 +33,7 @@
         /* Tahmin Ekranı 9 Maçlık Grid Yapısı */
         .fikstur-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -43,12 +43,23 @@
             border-radius: 8px; 
             border-left: 5px solid var(--kirmizi); 
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            transition: 0.3s;
+        }
+        .mac-karti.kilitli {
+            border-left: 5px solid #999;
+            opacity: 0.7;
+            background-color: #e0e0e0;
         }
         .mac-karti h3 { margin:0 0 5px 0; text-align: center; font-size: 1.1rem; }
         .mac-detay { text-align: center; font-size: 0.85rem; color: #666; margin-bottom: 10px; }
-        .skor-kutusu { display: flex; align-items: center; justify-content: center; background-color: var(--acik-gri); padding: 0.8rem; border-radius: 6px; }
-        .skor-kutusu input { width: 50px; padding: 0.4rem; text-align: center; font-size: 1.2rem; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
         
+        .skor-kutusu { display: flex; align-items: center; justify-content: center; background-color: var(--acik-gri); padding: 0.8rem; border-radius: 6px; position: relative; }
+        .skor-kutusu input { width: 45px; padding: 0.4rem; text-align: center; font-size: 1.2rem; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
+        
+        .btn-tekil { background-color: var(--saha-yesili); color: white; border: none; padding: 0.4rem 0.6rem; font-size: 1.2rem; border-radius: 4px; cursor: pointer; margin-left: 15px; }
+        .btn-tekil:hover { background-color: #1b5e20; }
+        .btn-tekil:disabled { background-color: #999; cursor: not-allowed; }
+
         .btn-kaydet-dev { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 1rem 3rem; cursor: pointer; border-radius: 6px; font-size: 1.2rem; font-weight: bold; }
         #bildirim { display: none; background-color: var(--saha-yesili); color: var(--beyaz); padding: 1rem; border-radius: 6px; font-weight: bold; max-width: 400px; margin: 1.5rem auto 0 auto; text-align: center; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -99,102 +110,113 @@
         </div>
 
         <div id="tahmin" class="sayfa">
-            <h2 style="text-align: center; margin-bottom: 2rem;">Haftanın Fikstürü</h2>
+            <h2 style="text-align: center; margin-bottom: 0;">Haftanın Fikstürü</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 2rem;">Maçlar başlama saatinde otomatik olarak kilitlenir.</p>
             
             <div class="fikstur-grid">
-                <div class="mac-karti" data-macid="GS-FB">
+                <!-- data-saat kısımlarında maçın gerçek saatleri yazılı. Kilit testi için saatleri kurcalayabilirsin -->
+                <div class="mac-karti" data-macid="GS-FB" data-saat="2026-09-12T19:00:00">
                     <h3>Galatasaray - Fenerbahçe</h3>
-                    <div class="mac-detay">Cumartesi 19:00</div>
+                    <div class="mac-detay">Cumartesi 19:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'GS-FB')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
                 
-                <div class="mac-karti" data-macid="SAM-BAS">
+                <div class="mac-karti" data-macid="SAM-BAS" data-saat="2026-09-13T16:00:00">
                     <h3>Samsunspor - Başakşehir</h3>
-                    <div class="mac-detay">Pazar 16:00</div>
+                    <div class="mac-detay">Pazar 16:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'SAM-BAS')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
 
-                <div class="mac-karti" data-macid="BJK-TS">
+                <div class="mac-karti" data-macid="BJK-TS" data-saat="2026-09-13T19:00:00">
                     <h3>Beşiktaş - Trabzonspor</h3>
-                    <div class="mac-detay">Pazar 19:00</div>
+                    <div class="mac-detay">Pazar 19:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'BJK-TS')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
 
-                <div class="mac-karti" data-macid="GOZ-KON">
+                <div class="mac-karti" data-macid="GOZ-KON" data-saat="2026-09-12T16:00:00">
                     <h3>Göztepe - Konyaspor</h3>
-                    <div class="mac-detay">Cumartesi 16:00</div>
+                    <div class="mac-detay">Cumartesi 16:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'GOZ-KON')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
 
-                <div class="mac-karti" data-macid="SIV-KAY">
+                <div class="mac-karti" data-macid="SIV-KAY" data-saat="2026-09-12T19:00:00">
                     <h3>Sivasspor - Kayserispor</h3>
-                    <div class="mac-detay">Cumartesi 19:00</div>
+                    <div class="mac-detay">Cumartesi 19:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'SIV-KAY')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
 
-                <div class="mac-karti" data-macid="KAS-ANT">
+                <div class="mac-karti" data-macid="KAS-ANT" data-saat="2026-09-13T16:00:00">
                     <h3>Kasımpaşa - Antalyaspor</h3>
-                    <div class="mac-detay">Pazar 16:00</div>
+                    <div class="mac-detay">Pazar 16:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'KAS-ANT')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
 
-                <div class="mac-karti" data-macid="ALA-RIZ">
+                <div class="mac-karti" data-macid="ALA-RIZ" data-saat="2026-09-13T19:00:00">
                     <h3>Alanyaspor - Rizespor</h3>
-                    <div class="mac-detay">Pazar 19:00</div>
+                    <div class="mac-detay">Pazar 19:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'ALA-RIZ')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
 
-                <div class="mac-karti" data-macid="GFK-ADS">
+                <div class="mac-karti" data-macid="GFK-ADS" data-saat="2026-09-14T20:00:00">
                     <h3>Gaziantep FK - Adana Demirspor</h3>
-                    <div class="mac-detay">Pazartesi 20:00</div>
+                    <div class="mac-detay">Pazartesi 20:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'GFK-ADS')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
 
-                <div class="mac-karti" data-macid="HAT-BOD">
+                <div class="mac-karti" data-macid="HAT-BOD" data-saat="2026-09-14T20:00:00">
                     <h3>Hatayspor - Bodrum FK</h3>
-                    <div class="mac-detay">Pazartesi 20:00</div>
+                    <div class="mac-detay">Pazartesi 20:00 <span class="durum"></span></div>
                     <div class="skor-kutusu">
                         <input type="number" class="ev" min="0" placeholder="Ev">
-                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                         <input type="number" class="dep" min="0" placeholder="Dep">
+                        <button class="btn-tekil" onclick="tekilKaydet(this, 'HAT-BOD')" title="Sadece bu maçı kaydet">💾</button>
                     </div>
                 </div>
             </div>
             
             <div style="text-align: center;">
-                <button class="btn-kaydet-dev" onclick="tahminleriGonder()">Tüm Tahminleri Kaydet</button>
+                <button class="btn-kaydet-dev" onclick="tahminleriGonder()">Doldurulan Tüm Maçları Kaydet</button>
                 <div id="bildirim">✅ Tahminleriniz başarıyla kaydedildi!</div>
             </div>
         </div>
@@ -232,6 +254,8 @@
             document.querySelector('#kullanici-bilgi span').innerText = nick;
             document.getElementById('kullanici-bilgi').style.display = 'block';
             liderlikCek(); 
+            kilitKontrol(); // Saat kontrolünü başlat
+            setInterval(kilitKontrol, 60000); // Her dakikada bir kontrol et
         }
 
         function sayfaDegistir(hedefId) {
@@ -241,27 +265,77 @@
             document.getElementById('btn-' + hedefId).classList.add('aktif');
         }
 
+        // MAÇ SAATİ KONTROL MOTORU
+        function kilitKontrol() {
+            let simdi = new Date();
+            
+            document.querySelectorAll('.mac-karti').forEach(kart => {
+                let macSaati = new Date(kart.getAttribute('data-saat'));
+                let durumSpan = kart.querySelector('.durum');
+                let evInput = kart.querySelector('.ev');
+                let depInput = kart.querySelector('.dep');
+                let btn = kart.querySelector('.btn-tekil');
+
+                if (simdi >= macSaati) {
+                    kart.classList.add('kilitli');
+                    durumSpan.innerHTML = "<br><b style='color:red;'>🔒 Maç Başladı - Tahminler Kilitlendi</b>";
+                    evInput.disabled = true;
+                    depInput.disabled = true;
+                    if(btn) btn.disabled = true;
+                }
+            });
+        }
+
+        // TEK BİR MAÇI KAYDETME (Küçük buton)
+        async function tekilKaydet(btn, macId) {
+            let kart = btn.closest('.mac-karti');
+            let evSkor = kart.querySelector('.ev').value;
+            let depSkor = kart.querySelector('.dep').value;
+            let nick = localStorage.getItem('sistemNick');
+
+            if(evSkor === "" || depSkor === "") {
+                alert("Lütfen bu maçın skorunu tam girin.");
+                return;
+            }
+
+            try {
+                let url = `${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=${macId}&ev_skor=${evSkor}&dep_skor=${depSkor}`;
+                let response = await fetch(url, { method: 'POST' });
+                
+                if(response.ok) {
+                    // Kullanıcıya kaydedildi hissini ver
+                    let orijinalMetin = btn.innerHTML;
+                    btn.innerHTML = '✅';
+                    setTimeout(() => { btn.innerHTML = orijinalMetin; }, 2000);
+                }
+            } catch (error) {
+                alert("Bağlantı hatası!");
+            }
+        }
+
+        // TOPLU KAYDETME (Boş olanları ve kilitli olanları atlar)
         async function tahminleriGonder() {
             let nick = localStorage.getItem('sistemNick');
-            let maclar = document.querySelectorAll('.mac-karti');
-            let eksikVar = false;
+            // Sadece kilitlenmemiş maçları seç
+            let maclar = document.querySelectorAll('.mac-karti:not(.kilitli)');
             let promises = [];
+            let islemYapilan = 0;
 
             maclar.forEach(kart => {
                 let macId = kart.getAttribute('data-macid');
                 let evSkor = kart.querySelector('.ev').value;
                 let depSkor = kart.querySelector('.dep').value;
 
-                if(evSkor === "" || depSkor === "") {
-                    eksikVar = true;
-                } else {
+                // Sadece içi dolu olanları paketle
+                if(evSkor !== "" && depSkor !== "") {
                     let url = `${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=${macId}&ev_skor=${evSkor}&dep_skor=${depSkor}`;
                     promises.push(fetch(url, { method: 'POST' }));
+                    islemYapilan++;
                 }
             });
 
-            if(eksikVar) {
-                alert("Lütfen 9 maçın da skorlarını eksiksiz doldurun.");
+            if(islemYapilan === 0) {
+                alert("Kaydedilecek geçerli bir skor girmediniz. Lütfen tahminlerinizi yazın.");
                 return;
             }
 
