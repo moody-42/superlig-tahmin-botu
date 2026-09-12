@@ -1,187 +1,4 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Süper Lig Tahmin Merkezi</title>
-    <style>
-        :root {
-            --kirmizi: #D32F2F;
-            --beyaz: #FFFFFF;
-            --acik-gri: #F5F5F5;
-            --koyu-gri: #212121;
-            --saha-yesili: #2E7D32;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--acik-gri); color: var(--koyu-gri); }
-        
-        #login-ekrani { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(33, 33, 33, 0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .login-kutu { background-color: var(--beyaz); padding: 3rem 2rem; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-top: 6px solid var(--kirmizi); width: 300px; }
-        .login-kutu input { width: 80%; padding: 0.8rem; margin: 1.5rem 0; border: 1px solid #ccc; border-radius: 4px; font-size: 1.1rem; text-align: center; }
-        .btn-giris { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 0.8rem 2rem; font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; }
-        
-        header { background-color: var(--kirmizi); color: var(--beyaz); padding: 1.5rem; text-align: center; position: relative; }
-        #kullanici-bilgi { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-weight: bold; background-color: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; display: none; }
-        
-        nav { display: flex; justify-content: center; background-color: var(--koyu-gri); flex-wrap: wrap; }
-        nav button { background: none; color: var(--beyaz); border: none; padding: 1rem 2rem; cursor: pointer; font-size: 1rem; font-weight: bold; }
-        nav button.aktif { background-color: var(--saha-yesili); }
-        .sayfa { display: none; padding: 2rem; max-width: 1000px; margin: 0 auto; }
-        .sayfa.aktif { display: block; }
-        .kart { background: var(--beyaz); padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; border-left: 6px solid var(--kirmizi); overflow-x: auto; }
-        
-        .sayfalama { display: flex; justify-content: center; gap: 10px; margin-bottom: 2rem; flex-wrap: wrap; }
-        .sayfalama button { padding: 8px 16px; background-color: var(--beyaz); border: 2px solid var(--kirmizi); color: var(--kirmizi); font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .sayfalama button.aktif-sayfa { background-color: var(--kirmizi); color: var(--beyaz); }
-
-        .fikstur-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .mac-karti { background: var(--beyaz); padding: 1.5rem 1rem; border-radius: 8px; border-left: 5px solid var(--kirmizi); box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.3s; }
-        .mac-karti.kilitli { border-left: 5px solid #999; opacity: 0.7; background-color: #e0e0e0; }
-        .mac-karti h3 { margin:0 0 5px 0; text-align: center; font-size: 1.1rem; }
-        .mac-detay { text-align: center; font-size: 0.85rem; color: #666; margin-bottom: 10px; }
-        
-        .skor-kutusu { display: flex; align-items: center; justify-content: center; background-color: var(--acik-gri); padding: 0.8rem; border-radius: 6px; position: relative; }
-        .skor-kutusu input { width: 45px; padding: 0.4rem; text-align: center; font-size: 1.2rem; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
-        
-        .btn-tekil { background-color: var(--saha-yesili); color: white; border: none; padding: 0.4rem 0.6rem; font-size: 1.2rem; border-radius: 4px; cursor: pointer; margin-left: 15px; }
-        .btn-tekil:hover { background-color: #1b5e20; }
-        .btn-tekil:disabled { background-color: #999; cursor: not-allowed; }
-
-        .btn-kaydet-dev { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 1rem 3rem; cursor: pointer; border-radius: 6px; font-size: 1.2rem; font-weight: bold; }
-        #bildirim { display: none; background-color: var(--saha-yesili); color: var(--beyaz); padding: 1rem; border-radius: 6px; font-weight: bold; max-width: 400px; margin: 1.5rem auto 0 auto; text-align: center; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: var(--saha-yesili); color: var(--beyaz); }
-        .sutun-kucuk { width: 40px; text-align: center; }
-        #ana-icerik { display: none; }
-    </style>
-</head>
-<body>
-
-    <div id="login-ekrani">
-        <div class="login-kutu">
-            <h2 style="margin-top: 0;">Sisteme Giriş</h2>
-            <input type="text" id="nick-input" placeholder="Nickinizi yazın..." autocomplete="off">
-            <button class="btn-giris" onclick="nickKaydet()">Giriş Yap</button>
-        </div>
-    </div>
-
-    <div id="ana-icerik">
-        <header>
-            <h1>⚽ Süper Lig Tahmin Merkezi</h1>
-            <div id="kullanici-bilgi">Hoş Geldin, <span></span></div>
-        </header>
-        <nav>
-            <button onclick="sayfaDegistir('liderlik'); liderlikCek();" id="btn-liderlik" class="aktif">🏆 Liderlik Tablosu</button>
-            <button onclick="sayfaDegistir('tahmin')" id="btn-tahmin">📝 Tahmin Yap</button>
-            <button onclick="sayfaDegistir('gercek-lig'); gercekLigCek();" id="btn-gercek-lig">📊 Süper Lig Tablosu</button>
-        </nav>
-
-        <div id="liderlik" class="sayfa aktif">
-            <h2>Bizim Liderlik Tablosu</h2>
-            <div class="kart">
-                <table>
-                    <thead><tr><th>Sıra</th><th>Kullanıcı (Nick)</th><th>Toplam Puan</th></tr></thead>
-                    <tbody id="liderlik-satirlari"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="tahmin" class="sayfa">
-            <h2 style="text-align: center; margin-bottom: 10px;">Fikstür ve Tahminler</h2>
-            <div id="sayfalama-butonlari" class="sayfalama"></div>
-            
-            <div class="fikstur-grid" id="fikstur-alani"></div>
-            
-            <div style="text-align: center;">
-                <button class="btn-kaydet-dev" onclick="tahminleriGonder()">Sayfadaki Tüm Tahminleri Kaydet</button>
-                <div id="bildirim">✅ Tahminleriniz başarıyla kaydedildi!</div>
-            </div>
-        </div>
-
-        <div id="gercek-lig" class="sayfa">
-            <h2>Güncel Süper Lig Puan Durumu</h2>
-            <div class="kart">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="sutun-kucuk">#</th>
-                            <th>Takım</th>
-                            <th class="sutun-kucuk">O</th>
-                            <th class="sutun-kucuk">G</th>
-                            <th class="sutun-kucuk">B</th>
-                            <th class="sutun-kucuk">M</th>
-                            <th class="sutun-kucuk">AV</th>
-                            <th class="sutun-kucuk">P</th>
-                        </tr>
-                    </thead>
-                    <tbody id="gercek-lig-satirlari"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const API_URL = "https://superlig-tahmin-botu.onrender.com"; 
-        let aktifKullanici = localStorage.getItem('sistemNick');
-        
-        let tumMaclar = [];
-        let aktifSayfa = 1;
-        const sayfaBasinaMac = 9;
-
-        window.onload = function() {
-            if(aktifKullanici) { sistemiBaslat(aktifKullanici); }
-        };
-
-        function nickKaydet() {
-            let girilenNick = document.getElementById('nick-input').value.trim();
-            if(girilenNick.length >= 3) {
-                localStorage.setItem('sistemNick', girilenNick);
-                sistemiBaslat(girilenNick);
-            } else { alert("Nick en az 3 karakter olmalıdır!"); }
-        }
-
-        function sistemiBaslat(nick) {
-            document.getElementById('login-ekrani').style.display = 'none';
-            document.getElementById('ana-icerik').style.display = 'block';
-            document.querySelector('#kullanici-bilgi span').innerText = nick;
-            document.getElementById('kullanici-bilgi').style.display = 'block';
-            
-            liderlikCek(); 
-            fiksturuCek();
-            setInterval(kilitKontrol, 60000); 
-        }
-
-        function sayfaDegistir(hedefId) {
-            document.querySelectorAll('.sayfa').forEach(sayfa => sayfa.classList.remove('aktif'));
-            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('aktif'));
-            document.getElementById(hedefId).classList.add('aktif');
-            document.getElementById('btn-' + hedefId).classList.add('aktif');
-        }
-
-        async function fiksturuCek() {
-            try {
-                let response = await fetch(`${API_URL}/api/fikstur`);
-                tumMaclar = await response.json();
-                
-                let toplamSayfa = Math.ceil(tumMaclar.length / sayfaBasinaMac);
-                if (toplamSayfa === 0) toplamSayfa = 1;
-                
-                let sayfalamaHTML = "";
-                for(let i = 1; i <= toplamSayfa; i++) {
-                    sayfalamaHTML += `<button onclick="sayfayiGoster(${i})" id="btn-sayfa-${i}">Sayfa ${i}</button>`;
-                }
-                document.getElementById('sayfalama-butonlari').innerHTML = sayfalamaHTML;
-                
-                // Varsayılan olarak en son sayfayı (en güncel maçları) göster
-                sayfayiGoster(toplamSayfa);
-            } catch (error) {
-                console.log("Fikstür çekilemedi.");
-            }
-        }
-
-        function sayfayiGoster(sayfaNo) {
+function sayfayiGoster(sayfaNo) {
             aktifSayfa = sayfaNo;
             document.querySelectorAll('.sayfalama button').forEach(b => b.classList.remove('aktif-sayfa'));
             let seciliBtn = document.getElementById(`btn-sayfa-${sayfaNo}`);
@@ -195,11 +12,32 @@
             gridAlani.innerHTML = '';
 
             gosterilecekMaclar.forEach(mac => {
-                let macSaati = new Date(mac.tarih);
-                let formatliSaat = macSaati.toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute:'2-digit' });
+                let formatliSaat = mac.tarih;
+                let isoSaat = new Date().toISOString(); // Kilit sistemi için varsayılan
+
+                // TFF'nin "11.09.2026 20:00" formatını JavaScript'in anlayacağı şekle çevir
+                if (mac.tarih.includes('.')) {
+                    let parcalar = mac.tarih.split(' ');
+                    if (parcalar.length >= 2) {
+                        let tarihKismi = parcalar[0].split('.');
+                        let saatKismi = parcalar[1].split(':');
+                        if (tarihKismi.length === 3 && saatKismi.length >= 2) {
+                            // JS formatı: Yıl, Ay(0-11 arası), Gün, Saat, Dakika
+                            let macSaati = new Date(tarihKismi[2], tarihKismi[1] - 1, tarihKismi[0], saatKismi[0], saatKismi[1]);
+                            formatliSaat = macSaati.toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute:'2-digit' });
+                            isoSaat = macSaati.toISOString();
+                        }
+                    }
+                } else {
+                    let macSaati = new Date(mac.tarih);
+                    if (!isNaN(macSaati)) {
+                        formatliSaat = macSaati.toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute:'2-digit' });
+                        isoSaat = macSaati.toISOString();
+                    }
+                }
 
                 gridAlani.innerHTML += `
-                    <div class="mac-karti" data-macid="${mac.mac_id}" data-saat="${mac.tarih}">
+                    <div class="mac-karti" data-macid="${mac.mac_id}" data-saat="${isoSaat}">
                         <h3>${mac.ev} - ${mac.dep}</h3>
                         <div class="mac-detay">${formatliSaat} <span class="durum"></span></div>
                         <div class="skor-kutusu">
@@ -213,102 +51,3 @@
             });
             kilitKontrol();
         }
-
-        function kilitKontrol() {
-            let simdi = new Date();
-            document.querySelectorAll('.mac-karti').forEach(kart => {
-                let macSaati = new Date(kart.getAttribute('data-saat'));
-                let durumSpan = kart.querySelector('.durum');
-                
-                if (simdi >= macSaati) {
-                    kart.classList.add('kilitli');
-                    durumSpan.innerHTML = "<br><b style='color:red;'>🔒 Maç Başladı</b>";
-                    kart.querySelector('.ev').disabled = true;
-                    kart.querySelector('.dep').disabled = true;
-                    let btn = kart.querySelector('.btn-tekil');
-                    if(btn) btn.disabled = true;
-                }
-            });
-        }
-
-        async function tekilKaydet(btn, macId) {
-            let kart = btn.closest('.mac-karti');
-            let evSkor = kart.querySelector('.ev').value;
-            let depSkor = kart.querySelector('.dep').value;
-            let nick = localStorage.getItem('sistemNick');
-
-            if(evSkor === "" || depSkor === "") { alert("Lütfen bu maçın skorunu tam girin."); return; }
-            try {
-                let url = `${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=${macId}&ev_skor=${evSkor}&dep_skor=${depSkor}`;
-                let response = await fetch(url, { method: 'POST' });
-                if(response.ok) {
-                    let orijinal = btn.innerHTML;
-                    btn.innerHTML = '✅';
-                    setTimeout(() => { btn.innerHTML = orijinal; }, 2000);
-                }
-            } catch (error) { alert("Bağlantı hatası!"); }
-        }
-
-        async function tahminleriGonder() {
-            let nick = localStorage.getItem('sistemNick');
-            let maclar = document.querySelectorAll('.mac-karti:not(.kilitli)');
-            let promises = [];
-            let islemYapilan = 0;
-
-            maclar.forEach(kart => {
-                let macId = kart.getAttribute('data-macid');
-                let evSkor = kart.querySelector('.ev').value;
-                let depSkor = kart.querySelector('.dep').value;
-                if(evSkor !== "" && depSkor !== "") {
-                    let url = `${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=${macId}&ev_skor=${evSkor}&dep_skor=${depSkor}`;
-                    promises.push(fetch(url, { method: 'POST' }));
-                    islemYapilan++;
-                }
-            });
-
-            if(islemYapilan === 0) { alert("Kaydedilecek geçerli bir skor girmediniz."); return; }
-            try {
-                await Promise.all(promises);
-                let bildirim = document.getElementById('bildirim');
-                bildirim.style.display = 'block';
-                setTimeout(() => { bildirim.style.display = 'none'; }, 3000);
-            } catch (error) { alert("Sunucuya bağlanırken bir hata oluştu."); }
-        }
-
-        async function liderlikCek() {
-            try {
-                let response = await fetch(`${API_URL}/api/liderlik`);
-                let siralama = await response.json();
-                let tabloIci = "";
-                siralama.forEach((kisi, index) => {
-                    tabloIci += `<tr><td>${index + 1}</td><td><strong>${kisi.nick}</strong></td><td>${kisi.puan}</td></tr>`;
-                });
-                document.getElementById('liderlik-satirlari').innerHTML = tabloIci;
-            } catch (error) { console.log("Liderlik verisi çekilemedi."); }
-        }
-
-        async function gercekLigCek() {
-            try {
-                let response = await fetch(`${API_URL}/api/gercek-puan-durumu`);
-                let takimlar = await response.json();
-                let tabloIci = "";
-                takimlar.forEach((t) => {
-                    tabloIci += `
-                        <tr>
-                            <td class="sutun-kucuk"><strong>${t.sira}</strong></td>
-                            <td>${t.takim}</td>
-                            <td class="sutun-kucuk">${t.o}</td>
-                            <td class="sutun-kucuk">${t.g}</td>
-                            <td class="sutun-kucuk">${t.b}</td>
-                            <td class="sutun-kucuk">${t.m}</td>
-                            <td class="sutun-kucuk">${t.av}</td>
-                            <td class="sutun-kucuk"><strong>${t.p}</strong></td>
-                        </tr>
-                    `;
-                });
-                document.getElementById('gercek-lig-satirlari').innerHTML = tabloIci;
-            } catch (error) { console.log("Gerçek lig tablosu çekilemedi."); }
-        }
-    </script>
-</body>
-</html>
