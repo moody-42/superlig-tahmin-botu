@@ -1,53 +1,299 @@
-function sayfayiGoster(sayfaNo) {
-            aktifSayfa = sayfaNo;
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Süper Lig Tahmin Merkezi</title>
+    <style>
+        :root {
+            --kirmizi: #D32F2F; --beyaz: #FFFFFF; --acik-gri: #F5F5F5;
+            --koyu-gri: #212121; --saha-yesili: #2E7D32; --altin: #FFD700;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--acik-gri); color: var(--koyu-gri); }
+        
+        #login-ekrani { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(33, 33, 33, 0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-kutu { background-color: var(--beyaz); padding: 3rem 2rem; border-radius: 8px; text-align: center; border-top: 6px solid var(--kirmizi); width: 300px; }
+        .login-kutu input { width: 80%; padding: 0.8rem; margin: 1.5rem 0; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .btn-giris { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 0.8rem 2rem; font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; }
+        
+        header { background-color: var(--kirmizi); color: var(--beyaz); padding: 1.5rem; text-align: center; position: relative; }
+        #kullanici-bilgi { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-weight: bold; background-color: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; display: none; }
+        
+        nav { display: flex; justify-content: center; background-color: var(--koyu-gri); flex-wrap: wrap; }
+        nav button { background: none; color: var(--beyaz); border: none; padding: 1rem 2rem; cursor: pointer; font-size: 1rem; font-weight: bold; transition: 0.2s;}
+        nav button.aktif { background-color: var(--saha-yesili); }
+        nav button:hover { background-color: #444; }
+
+        .sayfa { display: none; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+        .sayfa.aktif { display: block; }
+        .kart { background: var(--beyaz); padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; border-left: 6px solid var(--kirmizi); overflow-x: auto; }
+        
+        /* Fikstür & Grid */
+        .sayfalama { display: flex; justify-content: center; gap: 10px; margin-bottom: 2rem; flex-wrap: wrap; }
+        .sayfalama button { padding: 8px 16px; background-color: var(--beyaz); border: 2px solid var(--kirmizi); color: var(--kirmizi); font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .sayfalama button.aktif-sayfa { background-color: var(--kirmizi); color: var(--beyaz); }
+
+        .fikstur-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .mac-karti { background: var(--beyaz); padding: 1.5rem 1rem; border-radius: 8px; border-left: 5px solid var(--kirmizi); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .mac-karti.kilitli { border-left-color: #999; opacity: 0.7; background-color: #e0e0e0; }
+        .mac-karti h3 { margin:0 0 5px 0; text-align: center; font-size: 1.1rem; }
+        .mac-detay { text-align: center; font-size: 0.85rem; color: #666; margin-bottom: 10px; }
+        .skor-kutusu { display: flex; align-items: center; justify-content: center; background-color: var(--acik-gri); padding: 0.8rem; border-radius: 6px; }
+        .skor-kutusu input { width: 45px; padding: 0.4rem; text-align: center; font-size: 1.2rem; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
+        .btn-tekil { background-color: var(--saha-yesili); color: white; border: none; padding: 0.4rem 0.6rem; font-size: 1.2rem; border-radius: 4px; cursor: pointer; margin-left: 15px; }
+
+        /* Admin Paneli Özel Tasarım */
+        .admin-alan { border: 2px dashed #999; padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #fafafa;}
+        .admin-alan input, .admin-alan select { padding: 8px; margin: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        .btn-admin { background-color: var(--koyu-gri); color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-tehlike { background-color: var(--kirmizi); color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; text-align: center; }
+        th, td { padding: 1rem; border-bottom: 1px solid #ddd; }
+        th { background-color: var(--saha-yesili); color: var(--beyaz); }
+        #ana-icerik { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="login-ekrani">
+        <div class="login-kutu">
+            <h2 style="margin-top: 0;">Sisteme Giriş</h2>
+            <input type="text" id="nick-input" placeholder="Nickinizi yazın..." autocomplete="off">
+            <button class="btn-giris" onclick="nickKaydet()">Giriş Yap</button>
+        </div>
+    </div>
+
+    <div id="ana-icerik">
+        <header>
+            <h1>⚽ Süper Lig Tahmin Merkezi</h1>
+            <div id="kullanici-bilgi">Hoş Geldin, <span></span></div>
+        </header>
+        <nav>
+            <button onclick="sayfaDegistir('liderlik'); liderlikCek();" id="btn-liderlik" class="aktif">🏆 Liderlik Tablosu</button>
+            <button onclick="sayfaDegistir('tahmin'); fiksturuCek();" id="btn-tahmin">📝 Tahmin Yap</button>
+            <button onclick="sayfaDegistir('admin')" id="btn-admin">⚙️ Sistem Yönetimi</button>
+        </nav>
+
+        <!-- Liderlik Sayfası -->
+        <div id="liderlik" class="sayfa aktif">
+            <div class="kart">
+                <table>
+                    <thead><tr><th>Sıra</th><th>Kullanıcı (Nick)</th><th>Toplam Puan</th></tr></thead>
+                    <tbody id="liderlik-satirlari"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tahmin Sayfası -->
+        <div id="tahmin" class="sayfa">
+            <div id="sayfalama-butonlari" class="sayfalama"></div>
+            <div class="fikstur-grid" id="fikstur-alani"></div>
+        </div>
+
+        <!-- YENİ: Admin Sayfası -->
+        <div id="admin" class="sayfa">
+            <div class="kart" style="border-left-color: var(--koyu-gri);">
+                <h3 style="margin-top:0; color: var(--kirmizi);">Giriş Şifresi:</h3>
+                <input type="password" id="admin-sifre" placeholder="Şifreyi girin..." style="padding:10px; width:200px; margin-bottom: 20px;">
+
+                <div class="admin-alan">
+                    <h4>1. Yeni Maç Ekle (Fikstür Oluştur)</h4>
+                    <input type="text" id="yeni-ev" placeholder="Ev Sahibi (Örn: Galatasaray)">
+                    <input type="text" id="yeni-dep" placeholder="Deplasman (Örn: Samsunspor)">
+                    <input type="datetime-local" id="yeni-tarih" title="Maç Tarihi ve Saati">
+                    <button class="btn-admin" onclick="adminMacEkle()">➕ Maçı Ekle</button>
+                </div>
+
+                <div class="admin-alan">
+                    <h4>2. Biten Maçın Skorunu Gir ve Puanları Dağıt</h4>
+                    <select id="admin-mac-sec">
+                        <option value="">-- Maç Seçin --</option>
+                    </select>
+                    <input type="number" id="gercek-ev" placeholder="Ev Skor" style="width:70px;" min="0">
+                    <input type="number" id="gercek-dep" placeholder="Dep Skor" style="width:70px;" min="0">
+                    <button class="btn-admin" style="background-color: var(--saha-yesili);" onclick="adminSkorGir()">✅ Skoru Onayla ve Dağıt</button>
+                </div>
+                
+                <div class="admin-alan" style="border-color: var(--kirmizi); background-color: #ffebee;">
+                    <h4 style="color: var(--kirmizi);">3. Tehlikeli Alan</h4>
+                    <button class="btn-tehlike" onclick="adminTemizle()">🗑️ Geçmişteki Tüm Fikstürü Sil (Ekranda Çöp Varsa Kullan)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://superlig-tahmin-botu.onrender.com"; 
+        let aktifKullanici = localStorage.getItem('sistemNick');
+        let tumMaclar = [];
+        const sayfaBasinaMac = 9;
+
+        window.onload = function() { if(aktifKullanici) sistemiBaslat(aktifKullanici); };
+
+        function nickKaydet() {
+            let girilenNick = document.getElementById('nick-input').value.trim();
+            if(girilenNick.length >= 3) {
+                localStorage.setItem('sistemNick', girilenNick);
+                sistemiBaslat(girilenNick);
+            } else { alert("Nick en az 3 karakter olmalıdır!"); }
+        }
+
+        function sistemiBaslat(nick) {
+            document.getElementById('login-ekrani').style.display = 'none';
+            document.getElementById('ana-icerik').style.display = 'block';
+            document.querySelector('#kullanici-bilgi span').innerText = nick;
+            document.getElementById('kullanici-bilgi').style.display = 'block';
+            liderlikCek(); 
+            setInterval(kilitKontrol, 60000); 
+        }
+
+        function sayfaDegistir(hedefId) {
+            document.querySelectorAll('.sayfa').forEach(s => s.classList.remove('aktif'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('aktif'));
+            document.getElementById(hedefId).classList.add('aktif');
+            document.getElementById('btn-' + hedefId).classList.add('aktif');
+        }
+
+        /* --- TAHMİN & FİKSTÜR İŞLEMLERİ --- */
+        async function fiksturuCek() {
+            try {
+                let response = await fetch(`${API_URL}/api/fikstur`);
+                tumMaclar = await response.json();
+                
+                // Admin skor girme dropdown'ını da aynı anda doldur
+                let adminSelect = document.getElementById('admin-mac-sec');
+                adminSelect.innerHTML = '<option value="">-- Maç Seçin --</option>';
+                tumMaclar.forEach(m => {
+                    adminSelect.innerHTML += `<option value="${m.mac_id}">${m.ev} - ${m.dep}</option>`;
+                });
+
+                let toplamSayfa = Math.ceil(tumMaclar.length / sayfaBasinaMac) || 1;
+                let sayfalamaHTML = "";
+                for(let i = 1; i <= toplamSayfa; i++) {
+                    sayfalamaHTML += `<button onclick="sayfayiGoster(${i})" id="btn-sayfa-${i}">Sayfa ${i}</button>`;
+                }
+                document.getElementById('sayfalama-butonlari').innerHTML = sayfalamaHTML;
+                sayfayiGoster(toplamSayfa);
+            } catch (error) { console.log("Fikstür çekilemedi."); }
+        }
+
+        function sayfayiGoster(sayfaNo) {
             document.querySelectorAll('.sayfalama button').forEach(b => b.classList.remove('aktif-sayfa'));
-            let seciliBtn = document.getElementById(`btn-sayfa-${sayfaNo}`);
-            if(seciliBtn) seciliBtn.classList.add('aktif-sayfa');
+            let btn = document.getElementById(`btn-sayfa-${sayfaNo}`);
+            if(btn) btn.classList.add('aktif-sayfa');
 
             let baslangic = (sayfaNo - 1) * sayfaBasinaMac;
-            let bitis = baslangic + sayfaBasinaMac;
-            let gosterilecekMaclar = tumMaclar.slice(baslangic, bitis);
-
+            let gosterilecekler = tumMaclar.slice(baslangic, baslangic + sayfaBasinaMac);
             let gridAlani = document.getElementById('fikstur-alani');
             gridAlani.innerHTML = '';
 
-            gosterilecekMaclar.forEach(mac => {
-                let formatliSaat = mac.tarih;
-                let isoSaat = new Date().toISOString(); // Kilit sistemi için varsayılan
-
-                // TFF'nin "11.09.2026 20:00" formatını JavaScript'in anlayacağı şekle çevir
-                if (mac.tarih.includes('.')) {
-                    let parcalar = mac.tarih.split(' ');
-                    if (parcalar.length >= 2) {
-                        let tarihKismi = parcalar[0].split('.');
-                        let saatKismi = parcalar[1].split(':');
-                        if (tarihKismi.length === 3 && saatKismi.length >= 2) {
-                            // JS formatı: Yıl, Ay(0-11 arası), Gün, Saat, Dakika
-                            let macSaati = new Date(tarihKismi[2], tarihKismi[1] - 1, tarihKismi[0], saatKismi[0], saatKismi[1]);
-                            formatliSaat = macSaati.toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute:'2-digit' });
-                            isoSaat = macSaati.toISOString();
-                        }
-                    }
-                } else {
-                    let macSaati = new Date(mac.tarih);
-                    if (!isNaN(macSaati)) {
-                        formatliSaat = macSaati.toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute:'2-digit' });
-                        isoSaat = macSaati.toISOString();
-                    }
-                }
+            gosterilecekler.forEach(mac => {
+                let macSaati = new Date(mac.tarih);
+                let formatliSaat = isNaN(macSaati) ? "Tarih Belirsiz" : macSaati.toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute:'2-digit' });
 
                 gridAlani.innerHTML += `
-                    <div class="mac-karti" data-macid="${mac.mac_id}" data-saat="${isoSaat}">
+                    <div class="mac-karti" data-macid="${mac.mac_id}" data-saat="${mac.tarih}">
                         <h3>${mac.ev} - ${mac.dep}</h3>
                         <div class="mac-detay">${formatliSaat} <span class="durum"></span></div>
                         <div class="skor-kutusu">
                             <input type="number" class="ev" min="0" placeholder="Ev">
                             <span style="font-size: 1.5rem; margin: 0 10px;">-</span>
                             <input type="number" class="dep" min="0" placeholder="Dep">
-                            <button class="btn-tekil" onclick="tekilKaydet(this, '${mac.mac_id}')" title="Sadece bu maçı kaydet">💾</button>
+                            <button class="btn-tekil" onclick="tekilKaydet(this, '${mac.mac_id}')" title="Kaydet">💾</button>
                         </div>
                     </div>
                 `;
             });
             kilitKontrol();
         }
+
+        function kilitKontrol() {
+            let simdi = new Date();
+            document.querySelectorAll('.mac-karti').forEach(kart => {
+                let macSaati = new Date(kart.getAttribute('data-saat'));
+                if (simdi >= macSaati) {
+                    kart.classList.add('kilitli');
+                    kart.querySelector('.durum').innerHTML = "<br><b style='color:red;'>🔒 Kilitli</b>";
+                    kart.querySelector('.ev').disabled = true;
+                    kart.querySelector('.dep').disabled = true;
+                    if(kart.querySelector('.btn-tekil')) kart.querySelector('.btn-tekil').disabled = true;
+                }
+            });
+        }
+
+        async function tekilKaydet(btn, macId) {
+            let kart = btn.closest('.mac-karti');
+            let evSkor = kart.querySelector('.ev').value;
+            let depSkor = kart.querySelector('.dep').value;
+            let nick = localStorage.getItem('sistemNick');
+
+            if(evSkor === "" || depSkor === "") return alert("Lütfen skoru tam girin.");
+            try {
+                let url = `${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=${macId}&ev_skor=${evSkor}&dep_skor=${depSkor}`;
+                let res = await fetch(url, { method: 'POST' });
+                if(res.ok) { let o = btn.innerHTML; btn.innerHTML = '✅'; setTimeout(() => btn.innerHTML = o, 2000); }
+            } catch (error) { alert("Hata!"); }
+        }
+
+        async function liderlikCek() {
+            try {
+                let res = await fetch(`${API_URL}/api/liderlik`);
+                let siralama = await res.json();
+                let html = "";
+                siralama.forEach((k, i) => {
+                    html += `<tr><td>${i == 0 ? '👑' : i + 1}</td><td><strong>${k.nick}</strong></td><td>${k.puan}</td></tr>`;
+                });
+                document.getElementById('liderlik-satirlari').innerHTML = html;
+            } catch (error) { console.log("Hata."); }
+        }
+
+        /* --- YENİ EKLENEN ADMİN FONKSİYONLARI --- */
+        async function adminMacEkle() {
+            let sifre = document.getElementById('admin-sifre').value;
+            let ev = document.getElementById('yeni-ev').value;
+            let dep = document.getElementById('yeni-dep').value;
+            let tarih = document.getElementById('yeni-tarih').value; // ISO formatında döner: 2026-09-12T19:00
+
+            if(!ev || !dep || !tarih) return alert("Tüm alanları doldurun!");
+            
+            try {
+                let url = `${API_URL}/api/admin/mac-ekle?sifre=${sifre}&ev=${ev}&dep=${dep}&tarih=${tarih}`;
+                let res = await fetch(url, { method: 'POST' });
+                let sonuc = await res.json();
+                alert(sonuc.mesaj || sonuc.hata);
+                fiksturuCek(); // Arayüzü hemen güncelle
+            } catch (e) { alert("Sunucu Hatası"); }
+        }
+
+        async function adminSkorGir() {
+            let sifre = document.getElementById('admin-sifre').value;
+            let macId = document.getElementById('admin-mac-sec').value;
+            let gEv = document.getElementById('gercek-ev').value;
+            let gDep = document.getElementById('gercek-dep').value;
+
+            if(!macId || gEv === "" || gDep === "") return alert("Maç seçin ve skorları eksiksiz girin!");
+
+            try {
+                let url = `${API_URL}/api/admin/skor-gir?sifre=${sifre}&mac_id=${macId}&gercek_ev=${gEv}&gercek_dep=${gDep}`;
+                let res = await fetch(url, { method: 'POST' });
+                let sonuc = await res.json();
+                alert(sonuc.mesaj || sonuc.hata);
+            } catch (e) { alert("Sunucu Hatası"); }
+        }
+
+        async function adminTemizle() {
+            let sifre = document.getElementById('admin-sifre').value;
+            if(!confirm("Ekranda biriken tüm maçları çöpe atmak istediğine emin misin?")) return;
+            
+            try {
+                let url = `${API_URL}/api/admin/fikstur-temizle?sifre=${sifre}`;
+                let res = await fetch(url, { method: 'POST' });
+                let sonuc = await res.json();
+                alert(sonuc.mesaj || sonuc.hata);
+                fiksturuCek();
+            } catch (e) { alert("Sunucu Hatası"); }
+        }
+    </script>
+</body>
+</html>
