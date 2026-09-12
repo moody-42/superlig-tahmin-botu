@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Süper Lig Tahmin Merkezi</title>
+    <style>
+        :root {
+            --kirmizi: #D32F2F;
+            --beyaz: #FFFFFF;
+            --acik-gri: #F5F5F5;
+            --koyu-gri: #212121;
+            --saha-yesili: #2E7D32;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--acik-gri); color: var(--koyu-gri); }
+        
+        /* Login Ekranı */
+        #login-ekrani { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(33, 33, 33, 0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-kutu { background-color: var(--beyaz); padding: 3rem 2rem; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-top: 6px solid var(--kirmizi); width: 300px; }
+        .login-kutu input { width: 80%; padding: 0.8rem; margin: 1.5rem 0; border: 1px solid #ccc; border-radius: 4px; font-size: 1.1rem; text-align: center; }
+        .btn-giris { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 0.8rem 2rem; font-size: 1.1rem; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; }
+        
+        /* Ana Hatlar */
+        header { background-color: var(--kirmizi); color: var(--beyaz); padding: 1.5rem; text-align: center; position: relative; }
+        #kullanici-bilgi { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-weight: bold; background-color: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; display: none; }
+        nav { display: flex; justify-content: center; background-color: var(--koyu-gri); flex-wrap: wrap; }
+        nav button { background: none; color: var(--beyaz); border: none; padding: 1rem 2rem; cursor: pointer; font-size: 1rem; font-weight: bold; }
+        nav button.aktif { background-color: var(--saha-yesili); }
+        .sayfa { display: none; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+        .sayfa.aktif { display: block; }
+        .kart { background: var(--beyaz); padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; border-left: 6px solid var(--kirmizi); }
+        
+        /* Tahmin Ekranı Özel (Daha Küçük Maç Blokları) */
+        .mac-karti { 
+            background: var(--beyaz); 
+            padding: 1rem; 
+            margin: 0 auto 1rem auto; 
+            border-radius: 8px; 
+            border-left: 5px solid var(--kirmizi); 
+            max-width: 400px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+        }
+        .skor-kutusu { display: flex; align-items: center; justify-content: center; margin-top: 0.5rem; background-color: var(--acik-gri); padding: 0.8rem; border-radius: 6px; }
+        .skor-kutusu input { width: 50px; padding: 0.4rem; text-align: center; font-size: 1.2rem; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
+        .btn-kaydet-dev { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 1rem 3rem; cursor: pointer; border-radius: 6px; font-size: 1.2rem; font-weight: bold; margin-top: 1.5rem; }
+        
+        /* Başarılı Bildirim Kutusu */
+        #bildirim {
+            display: none;
+            background-color: var(--saha-yesili);
+            color: var(--beyaz);
+            padding: 1rem;
+            border-radius: 6px;
+            font-weight: bold;
+            max-width: 400px;
+            margin: 1.5rem auto 0 auto;
+            text-align: center;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Liderlik & Canlı */
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: var(--saha-yesili); color: var(--beyaz); }
+        #ana-icerik { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="login-ekrani">
+        <div class="login-kutu">
+            <h2 style="margin-top: 0;">Sisteme Giriş</h2>
+            <input type="text" id="nick-input" placeholder="Nickinizi yazın..." autocomplete="off">
+            <button class="btn-giris" onclick="nickKaydet()">Giriş Yap</button>
+        </div>
+    </div>
+
+    <div id="ana-icerik">
+        <header>
+            <h1>⚽ Süper Lig Tahmin Merkezi</h1>
+            <div id="kullanici-bilgi">Hoş Geldin, <span></span></div>
+        </header>
+        <nav>
+            <button onclick="sayfaDegistir('liderlik'); liderlikCek();" id="btn-liderlik" class="aktif">🏆 Liderlik Tablosu</button>
+            <button onclick="sayfaDegistir('tahmin')" id="btn-tahmin">📝 Tahmin Yap</button>
+            <button onclick="sayfaDegistir('canli')" id="btn-canli">🔴 Canlı Maç Merkezi</button>
+        </nav>
+
+        <div id="liderlik" class="sayfa aktif">
+            <h2>Genel Sıralama</h2>
+            <div class="kart">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sıra</th>
+                            <th>Kullanıcı (Nick)</th>
+                            <th>Toplam Puan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liderlik-satirlari">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tahmin" class="sayfa">
+            <h2 style="text-align: center;">Haftanın Fikstürü</h2>
+            
+            <div class="mac-karti">
+                <h3 style="margin:0 0 5px 0; text-align: center; font-size: 1.1rem;">Galatasaray - Fenerbahçe</h3>
+                <div class="skor-kutusu">
+                    <input type="number" id="mac1-ev" min="0" placeholder="Ev">
+                    <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                    <input type="number" id="mac1-dep" min="0" placeholder="Dep">
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="btn-kaydet-dev" onclick="tahminleriGonder()">Tahminleri Kaydet</button>
+                <div id="bildirim">✅ Tahminleriniz başarıyla kaydedildi!</div>
+            </div>
+        </div>
+
+        <div id="canli" class="sayfa">
+            <h2>🔴 Canlı Skor Merkezi</h2>
+            <div class="kart" style="border-left-color: var(--saha-yesili);">
+                <p>Canlı skor bağlantısı (WebSocket) aktif edildiğinde veriler buraya yansıyacak.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://superlig-tahmin-botu.onrender.com"; 
+
+        let aktifKullanici = localStorage.getItem('sistemNick');
+
+        window.onload = function() {
+            if(aktifKullanici) { sistemiBaslat(aktifKullanici); }
+        };
+
+        function nickKaydet() {
+            let girilenNick = document.getElementById('nick-input').value.trim();
+            if(girilenNick.length >= 3) {
+                localStorage.setItem('sistemNick', girilenNick);
+                sistemiBaslat(girilenNick);
+            } else {
+                alert("Nick en az 3 karakter olmalıdır!");
+            }
+        }
+
+        function sistemiBaslat(nick) {
+            document.getElementById('login-ekrani').style.display = 'none';
+            document.getElementById('ana-icerik').style.display = 'block';
+            document.querySelector('#kullanici-bilgi span').innerText = nick;
+            document.getElementById('kullanici-bilgi').style.display = 'block';
+            liderlikCek(); 
+        }
+
+        function sayfaDegistir(hedefId) {
+            document.querySelectorAll('.sayfa').forEach(sayfa => sayfa.classList.remove('aktif'));
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('aktif'));
+            document.getElementById(hedefId).classList.add('aktif');
+            document.getElementById('btn-' + hedefId).classList.add('aktif');
+        }
+
+        async function tahminleriGonder() {
+            let nick = localStorage.getItem('sistemNick');
+            let evSkor = document.getElementById('mac1-ev').value;
+            let depSkor = document.getElementById('mac1-dep').value;
+
+            if(evSkor === "" || depSkor === "") {
+                alert("Lütfen skorları boş bırakmayın.");
+                return;
+            }
+
+            try {
+                let response = await fetch(`${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=GS-FB&ev_skor=${evSkor}&dep_skor=${depSkor}`, {
+                    method: 'POST'
+                });
+                
+                if(response.ok) {
+                    let bildirim = document.getElementById('bildirim');
+                    bildirim.style.display = 'block';
+                    
+                    // Bildirimi 3 saniye sonra ekrandan gizle
+                    setTimeout(() => {
+                        bildirim.style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                alert("Sunucuya bağlanılamadı.");
+            }
+        }
+
+        async function liderlikCek() {
+            try {
+                let response = await fetch(`${API_URL}/api/liderlik`);
+                let siralama = await response.json();
+                
+                let tabloIci = "";
+                siralama.forEach((kisi, index) => {
+                    tabloIci += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><strong>${kisi.nick}</strong></td>
+                            <td>${kisi.puan}</td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('liderlik-satirlari').innerHTML = tabloIci;
+            } catch (error) {
+                console.log("Liderlik verisi çekilemedi.");
+            }
+        }
+    </script>
+</body>
+</html>
