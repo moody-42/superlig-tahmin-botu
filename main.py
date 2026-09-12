@@ -1,11 +1,9 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-import asyncio
-import os
 import sqlite3
-import json
-import urllib.request
+import requests
+from bs4 import BeautifulSoup
 
 app = FastAPI()
 
@@ -81,95 +79,102 @@ async def tahmin_kaydet(nick: str, mac_id: str, ev_skor: int, dep_skor: int):
     conn.close()
     return {"mesaj": "Başarılı"}
 
-# CRON JOB 1: SALI GÜNLERİ ÇALIŞACAK YENİ HAFTA BOTU (HATA AYIKLAMA MODU EKLENDİ)
+# TFF WEB SCRAPING BOTU - YENİ HAFTA FİKSTÜRÜ ÇEKİCİ
 @app.get("/api/otomatik-fikstur-cek")
 async def otomatik_fikstur_cek(admin_sifre: str):
     if admin_sifre != "samsun55": return {"hata": "Yetkisiz İşlem!"}
-    api_key = os.environ.get("FOOTBALL_API_KEY")
-    
-    url = "https://v3.football.api-sports.io/fixtures?league=203&season=2026&next=9"
+
+    # Kendimizi gerçek bir tarayıcı gibi gösteriyoruz
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
+    url = "https://www.tff.org/default.aspx?pageID=198"
+
     try:
-        req = urllib.request.Request(url)
-        req.add_header("x-apisports-key", api_key)
-        with urllib.request.urlopen(req) as response:
-            veri = json.loads(response.read())
-            
+        res = requests.get(url, headers=headers, timeout=15)
+        res.encoding = 'utf-8' # Türkçe karakter sorunu olmaması için
+        soup = BeautifulSoup(res.text, "html.parser")
+
         conn = sqlite3.connect("superlig.db")
         c = conn.cursor()
-        
         eklenen = 0
-        if "response" in veri:
-            for mac in veri["response"]:
-                m_id = str(mac["fixture"]["id"])
-                tarih = mac["fixture"]["date"]
-                ev = mac["teams"]["home"]["name"]
-                dep = mac["teams"]["away"]["name"]
-                c.execute("INSERT OR IGNORE INTO fikstur (mac_id, ev_sahibi, deplasman, tarih) VALUES (?, ?, ?, ?)", (m_id, ev, dep, tarih))
-                eklenen += 1
-            
+
+        # Sitedeki tüm tablo satırlarını (tr) al
+        satirlar = soup.find_all("tr")
+        for satir in satirlar:
+            sutunlar = satir.find_all("td")
+            if len(sutunlar) >= 4:
+                ev = sutunlar[0].text.strip()
+                dep = sutunlar[2].text.strip()
+                tarih = sutunlar[3].text.strip()
+
+                # Satırın gerçekten takım isimleri barındırdığını doğrula
+                if ev and dep and len(ev) > 2 and len(dep) > 2 and "Takım" not in ev and "Hafta" not in ev:
+                    # Takım isimlerinin ilk 3 harfinden maç id'si yarat (örn: GAL-FEN)
+                    m_id = f"{ev[:3].upper()}-{dep[:3].upper()}"
+                    c.execute("INSERT OR IGNORE INTO fikstur (mac_id, ev_sahibi, deplasman, tarih) VALUES (?, ?, ?, ?)", (m_id, ev, dep, tarih))
+                    eklenen += 1
+
         conn.commit()
         conn.close()
-        
-        # BÜTÜN CEVABI EKRANA BAS
-        return {
-            "mesaj": f"{eklenen} yeni maç sisteme eklendi.",
-            "api_ham_cevap": veri
-        }
-    except Exception as e:
-        return {"hata": f"Bağlantı sorunu: {str(e)}"}
+        return {"mesaj": f"TFF Kazıma Botu çalıştı! {eklenen} maç sisteme aktarıldı."}
 
-# CRON JOB 2: GÜNLÜK ÇALIŞAN SKOR VE TABLO GÜNCELLEYİCİ
+    except Exception as e:
+        return {"hata": f"Bot Hatası: {str(e)}"}
+
+# TFF WEB SCRAPING BOTU - SKOR OKUYUCU VE PUANLAYICI
 @app.get("/api/otomatik-skor-guncelle")
 async def otomatik_skor_guncelle(admin_sifre: str):
     if admin_sifre != "samsun55": return {"hata": "Yetkisiz İşlem!"}
-    api_key = os.environ.get("FOOTBALL_API_KEY")
-    
-    url_fikstur = "https://v3.football.api-sports.io/fixtures?league=203&season=2026&last=20"
-    url_lig = "https://v3.football.api-sports.io/standings?league=203&season=2026"
-    
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
+    url = "https://www.tff.org/default.aspx?pageID=198"
+
     try:
+        res = requests.get(url, headers=headers, timeout=15)
+        res.encoding = 'utf-8'
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        biten_maclar = {}
+        satirlar = soup.find_all("tr")
+
+        for satir in satirlar:
+            sutunlar = satir.find_all("td")
+            if len(sutunlar) >= 4:
+                ev = sutunlar[0].text.strip()
+                skor_metin = sutunlar[1].text.strip()
+                dep = sutunlar[2].text.strip()
+
+                # Skor sütununda "-" işareti varsa maç oynanmıştır (Örn: "2 - 1")
+                if "-" in skor_metin:
+                    temiz_skor = skor_metin.replace(" ", "")
+                    parcalar = temiz_skor.split("-")
+                    
+                    if len(parcalar) == 2 and parcalar[0].isdigit() and parcalar[1].isdigit():
+                        ev_skor = int(parcalar[0])
+                        dep_skor = int(parcalar[1])
+                        m_id = f"{ev[:3].upper()}-{dep[:3].upper()}"
+                        biten_maclar[m_id] = {"ev": ev_skor, "dep": dep_skor}
+
         conn = sqlite3.connect("superlig.db")
         c = conn.cursor()
-
-        req_f = urllib.request.Request(url_fikstur)
-        req_f.add_header("x-apisports-key", api_key)
-        with urllib.request.urlopen(req_f) as response:
-            veri_f = json.loads(response.read())
-            
-        biten_maclar = {}
-        for mac in veri_f.get("response", []):
-            if mac["fixture"]["status"]["short"] in ["FT", "AET", "PEN"]:
-                mac_id = str(mac["fixture"]["id"])
-                biten_maclar[mac_id] = {"ev": mac["goals"]["home"], "dep": mac["goals"]["away"]}
-                    
         c.execute("SELECT nick, mac_id, ev_skor, dep_skor FROM tahminler WHERE kazanilan_puan = -1")
         bekleyenler = c.fetchall()
         hesaplanan = 0
-        
+
         for satir in bekleyenler:
             nick, t_mac_id, t_ev, t_dep = satir
             if t_mac_id in biten_maclar:
                 gercek_ev = biten_maclar[t_mac_id]["ev"]
                 gercek_dep = biten_maclar[t_mac_id]["dep"]
                 puan = puan_hesapla(t_ev, t_dep, gercek_ev, gercek_dep)
+                
                 c.execute("UPDATE kullanicilar SET puan = puan + ? WHERE nick = ?", (puan, nick))
                 c.execute("UPDATE tahminler SET kazanilan_puan = ? WHERE nick = ? AND mac_id = ?", (puan, nick, t_mac_id))
                 hesaplanan += 1
 
-        req_l = urllib.request.Request(url_lig)
-        req_l.add_header("x-apisports-key", api_key)
-        with urllib.request.urlopen(req_l) as response:
-            veri_l = json.loads(response.read())
-        
-        if veri_l.get("response"):
-            c.execute("DELETE FROM gercek_lig") 
-            takimlar = veri_l["response"][0]["league"]["standings"][0]
-            for t in takimlar:
-                c.execute("INSERT INTO gercek_lig (sira, takim, o, g, b, m, av, p) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                          (t["rank"], t["team"]["name"], t["all"]["played"], t["all"]["win"], t["all"]["draw"], t["all"]["lose"], t["goalsDiff"], t["points"]))
-
         conn.commit()
         conn.close()
-        return {"mesaj": f"{hesaplanan} tahmin hesaplandı ve gerçek lig tablosu güncellendi."}
+        
+        return {"mesaj": f"TFF Kazıma Botu çalıştı! Biten maçlar bulundu ve {hesaplanan} tahmin hesaplandı."}
+
     except Exception as e:
-        return {"hata": f"API sorunu: {str(e)}"}
+        return {"hata": f"Bot Hatası: {str(e)}"}
