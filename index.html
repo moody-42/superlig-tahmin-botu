@@ -30,33 +30,27 @@
         .sayfa.aktif { display: block; }
         .kart { background: var(--beyaz); padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; border-left: 6px solid var(--kirmizi); }
         
-        /* Tahmin Ekranı Özel (Daha Küçük Maç Blokları) */
+        /* Tahmin Ekranı 9 Maçlık Grid Yapısı */
+        .fikstur-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
         .mac-karti { 
             background: var(--beyaz); 
-            padding: 1rem; 
-            margin: 0 auto 1rem auto; 
+            padding: 1.5rem 1rem; 
             border-radius: 8px; 
             border-left: 5px solid var(--kirmizi); 
-            max-width: 400px; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
         }
-        .skor-kutusu { display: flex; align-items: center; justify-content: center; margin-top: 0.5rem; background-color: var(--acik-gri); padding: 0.8rem; border-radius: 6px; }
+        .mac-karti h3 { margin:0 0 5px 0; text-align: center; font-size: 1.1rem; }
+        .mac-detay { text-align: center; font-size: 0.85rem; color: #666; margin-bottom: 10px; }
+        .skor-kutusu { display: flex; align-items: center; justify-content: center; background-color: var(--acik-gri); padding: 0.8rem; border-radius: 6px; }
         .skor-kutusu input { width: 50px; padding: 0.4rem; text-align: center; font-size: 1.2rem; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
-        .btn-kaydet-dev { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 1rem 3rem; cursor: pointer; border-radius: 6px; font-size: 1.2rem; font-weight: bold; margin-top: 1.5rem; }
         
-        /* Başarılı Bildirim Kutusu */
-        #bildirim {
-            display: none;
-            background-color: var(--saha-yesili);
-            color: var(--beyaz);
-            padding: 1rem;
-            border-radius: 6px;
-            font-weight: bold;
-            max-width: 400px;
-            margin: 1.5rem auto 0 auto;
-            text-align: center;
-            animation: fadeIn 0.3s;
-        }
+        .btn-kaydet-dev { background-color: var(--kirmizi); color: var(--beyaz); border: none; padding: 1rem 3rem; cursor: pointer; border-radius: 6px; font-size: 1.2rem; font-weight: bold; }
+        #bildirim { display: none; background-color: var(--saha-yesili); color: var(--beyaz); padding: 1rem; border-radius: 6px; font-weight: bold; max-width: 400px; margin: 1.5rem auto 0 auto; text-align: center; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Liderlik & Canlı */
@@ -105,19 +99,102 @@
         </div>
 
         <div id="tahmin" class="sayfa">
-            <h2 style="text-align: center;">Haftanın Fikstürü</h2>
+            <h2 style="text-align: center; margin-bottom: 2rem;">Haftanın Fikstürü</h2>
             
-            <div class="mac-karti">
-                <h3 style="margin:0 0 5px 0; text-align: center; font-size: 1.1rem;">Galatasaray - Fenerbahçe</h3>
-                <div class="skor-kutusu">
-                    <input type="number" id="mac1-ev" min="0" placeholder="Ev">
-                    <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
-                    <input type="number" id="mac1-dep" min="0" placeholder="Dep">
+            <div class="fikstur-grid">
+                <div class="mac-karti" data-macid="GS-FB">
+                    <h3>Galatasaray - Fenerbahçe</h3>
+                    <div class="mac-detay">Cumartesi 19:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+                
+                <div class="mac-karti" data-macid="SAM-BAS">
+                    <h3>Samsunspor - Başakşehir</h3>
+                    <div class="mac-detay">Pazar 16:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+
+                <div class="mac-karti" data-macid="BJK-TS">
+                    <h3>Beşiktaş - Trabzonspor</h3>
+                    <div class="mac-detay">Pazar 19:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+
+                <div class="mac-karti" data-macid="GOZ-KON">
+                    <h3>Göztepe - Konyaspor</h3>
+                    <div class="mac-detay">Cumartesi 16:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+
+                <div class="mac-karti" data-macid="SIV-KAY">
+                    <h3>Sivasspor - Kayserispor</h3>
+                    <div class="mac-detay">Cumartesi 19:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+
+                <div class="mac-karti" data-macid="KAS-ANT">
+                    <h3>Kasımpaşa - Antalyaspor</h3>
+                    <div class="mac-detay">Pazar 16:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+
+                <div class="mac-karti" data-macid="ALA-RIZ">
+                    <h3>Alanyaspor - Rizespor</h3>
+                    <div class="mac-detay">Pazar 19:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+
+                <div class="mac-karti" data-macid="GFK-ADS">
+                    <h3>Gaziantep FK - Adana Demirspor</h3>
+                    <div class="mac-detay">Pazartesi 20:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
+                </div>
+
+                <div class="mac-karti" data-macid="HAT-BOD">
+                    <h3>Hatayspor - Bodrum FK</h3>
+                    <div class="mac-detay">Pazartesi 20:00</div>
+                    <div class="skor-kutusu">
+                        <input type="number" class="ev" min="0" placeholder="Ev">
+                        <span style="font-size: 1.5rem; margin: 0 15px;">-</span>
+                        <input type="number" class="dep" min="0" placeholder="Dep">
+                    </div>
                 </div>
             </div>
             
             <div style="text-align: center;">
-                <button class="btn-kaydet-dev" onclick="tahminleriGonder()">Tahminleri Kaydet</button>
+                <button class="btn-kaydet-dev" onclick="tahminleriGonder()">Tüm Tahminleri Kaydet</button>
                 <div id="bildirim">✅ Tahminleriniz başarıyla kaydedildi!</div>
             </div>
         </div>
@@ -166,30 +243,35 @@
 
         async function tahminleriGonder() {
             let nick = localStorage.getItem('sistemNick');
-            let evSkor = document.getElementById('mac1-ev').value;
-            let depSkor = document.getElementById('mac1-dep').value;
+            let maclar = document.querySelectorAll('.mac-karti');
+            let eksikVar = false;
+            let promises = [];
 
-            if(evSkor === "" || depSkor === "") {
-                alert("Lütfen skorları boş bırakmayın.");
+            maclar.forEach(kart => {
+                let macId = kart.getAttribute('data-macid');
+                let evSkor = kart.querySelector('.ev').value;
+                let depSkor = kart.querySelector('.dep').value;
+
+                if(evSkor === "" || depSkor === "") {
+                    eksikVar = true;
+                } else {
+                    let url = `${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=${macId}&ev_skor=${evSkor}&dep_skor=${depSkor}`;
+                    promises.push(fetch(url, { method: 'POST' }));
+                }
+            });
+
+            if(eksikVar) {
+                alert("Lütfen 9 maçın da skorlarını eksiksiz doldurun.");
                 return;
             }
 
             try {
-                let response = await fetch(`${API_URL}/api/tahmin-yap?nick=${nick}&mac_id=GS-FB&ev_skor=${evSkor}&dep_skor=${depSkor}`, {
-                    method: 'POST'
-                });
-                
-                if(response.ok) {
-                    let bildirim = document.getElementById('bildirim');
-                    bildirim.style.display = 'block';
-                    
-                    // Bildirimi 3 saniye sonra ekrandan gizle
-                    setTimeout(() => {
-                        bildirim.style.display = 'none';
-                    }, 3000);
-                }
+                await Promise.all(promises);
+                let bildirim = document.getElementById('bildirim');
+                bildirim.style.display = 'block';
+                setTimeout(() => { bildirim.style.display = 'none'; }, 3000);
             } catch (error) {
-                alert("Sunucuya bağlanılamadı.");
+                alert("Sunucuya bağlanırken bir hata oluştu.");
             }
         }
 
