@@ -79,72 +79,74 @@ async def tahmin_kaydet(nick: str, mac_id: str, ev_skor: int, dep_skor: int):
     conn.close()
     return {"mesaj": "Başarılı"}
 
-# TFF WEB SCRAPING BOTU - YENİ HAFTA FİKSTÜRÜ ÇEKİCİ
+# TFF BOTU - YENİ HAFTA FİKSTÜRÜ ÇEKİCİ (AKILLI FİLTRELİ VE KARAKTER ÇÖZÜCÜLÜ)
 @app.get("/api/otomatik-fikstur-cek")
 async def otomatik_fikstur_cek(admin_sifre: str):
     if admin_sifre != "samsun55": return {"hata": "Yetkisiz İşlem!"}
 
-    # Kendimizi gerçek bir tarayıcı gibi gösteriyoruz
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     url = "https://www.tff.org/default.aspx?pageID=198"
 
     try:
         res = requests.get(url, headers=headers, timeout=15)
-        res.encoding = 'utf-8' # Türkçe karakter sorunu olmaması için
-        soup = BeautifulSoup(res.text, "html.parser")
+        # TFF'nin garip karakter kodlamasını zorla çöz:
+        res.encoding = 'utf-8' 
+        soup = BeautifulSoup(res.content, "html.parser", from_encoding="utf-8")
 
         conn = sqlite3.connect("superlig.db")
         c = conn.cursor()
+        
+        # SİSTEMDEKİ ESKİ BOZUK YAZILARI TEMİZLE
+        c.execute("DELETE FROM fikstur")
+        
         eklenen = 0
-
-        # Sitedeki tüm tablo satırlarını (tr) al
         satirlar = soup.find_all("tr")
         for satir in satirlar:
-            sutunlar = satir.find_all("td")
+            # İç içe geçmiş bozuk tabloları almaması için sadece doğrudan alt sütunlara bak
+            sutunlar = satir.find_all("td", recursive=False) 
             if len(sutunlar) >= 4:
                 ev = sutunlar[0].text.strip()
+                skor = sutunlar[1].text.strip()
                 dep = sutunlar[2].text.strip()
                 tarih = sutunlar[3].text.strip()
 
-                # Satırın gerçekten takım isimleri barındırdığını doğrula
-                if ev and dep and len(ev) > 2 and len(dep) > 2 and "Takım" not in ev and "Hafta" not in ev:
-                    # Takım isimlerinin ilk 3 harfinden maç id'si yarat (örn: GAL-FEN)
+                # AKILLI FİLTRE: Takım isimleri çok uzun olamaz ve başlık içeremez
+                if 2 < len(ev) < 40 and 2 < len(dep) < 40 and "Takım" not in ev and "Hafta" not in ev:
                     m_id = f"{ev[:3].upper()}-{dep[:3].upper()}"
                     c.execute("INSERT OR IGNORE INTO fikstur (mac_id, ev_sahibi, deplasman, tarih) VALUES (?, ?, ?, ?)", (m_id, ev, dep, tarih))
                     eklenen += 1
 
         conn.commit()
         conn.close()
-        return {"mesaj": f"TFF Kazıma Botu çalıştı! {eklenen} maç sisteme aktarıldı."}
+        return {"mesaj": f"Temizlik yapıldı. TFF Kazıma Botu çalıştı! {eklenen} maç sisteme pürüzsüz aktarıldı."}
 
     except Exception as e:
         return {"hata": f"Bot Hatası: {str(e)}"}
 
-# TFF WEB SCRAPING BOTU - SKOR OKUYUCU VE PUANLAYICI
+# TFF BOTU - SKOR OKUYUCU VE PUANLAYICI
 @app.get("/api/otomatik-skor-guncelle")
 async def otomatik_skor_guncelle(admin_sifre: str):
     if admin_sifre != "samsun55": return {"hata": "Yetkisiz İşlem!"}
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     url = "https://www.tff.org/default.aspx?pageID=198"
 
     try:
         res = requests.get(url, headers=headers, timeout=15)
         res.encoding = 'utf-8'
-        soup = BeautifulSoup(res.text, "html.parser")
+        soup = BeautifulSoup(res.content, "html.parser", from_encoding="utf-8")
 
         biten_maclar = {}
         satirlar = soup.find_all("tr")
 
         for satir in satirlar:
-            sutunlar = satir.find_all("td")
+            sutunlar = satir.find_all("td", recursive=False)
             if len(sutunlar) >= 4:
                 ev = sutunlar[0].text.strip()
                 skor_metin = sutunlar[1].text.strip()
                 dep = sutunlar[2].text.strip()
 
-                # Skor sütununda "-" işareti varsa maç oynanmıştır (Örn: "2 - 1")
-                if "-" in skor_metin:
+                if 2 < len(ev) < 40 and "-" in skor_metin:
                     temiz_skor = skor_metin.replace(" ", "")
                     parcalar = temiz_skor.split("-")
                     
@@ -174,7 +176,7 @@ async def otomatik_skor_guncelle(admin_sifre: str):
         conn.commit()
         conn.close()
         
-        return {"mesaj": f"TFF Kazıma Botu çalıştı! Biten maçlar bulundu ve {hesaplanan} tahmin hesaplandı."}
+        return {"mesaj": f"Biten maçlar bulundu ve {hesaplanan} tahmin hesaplandı."}
 
     except Exception as e:
         return {"hata": f"Bot Hatası: {str(e)}"}
