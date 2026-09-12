@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import os
 import sqlite3
-
+from fastapi.responses 
+import FileResponse
 app = FastAPI()
 
 # Frontend (HTML) sayfasının sunucuya veri gönderebilmesi için güvenlik izni (CORS)
@@ -98,3 +99,7 @@ async def canli_mac_merkezi(websocket: WebSocket):
             await asyncio.sleep(60)
     except Exception as e:
         print(f"Bağlantı koptu: {e}")
+        @app.get("/")
+
+        async def ana_sayfa():
+    return FileResponse("index.html")
